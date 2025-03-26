@@ -49,9 +49,9 @@ int main() {
     v = new int[numberOfElements];
     temp = new int[numberOfElements];
 
-
+    int k = 0;
     for (int i = numberOfElements - 1; i >= 0; i--)
-        v[i] = i;
+        v[k++] = i;
 
     auto start = chrono::high_resolution_clock::now();
 
