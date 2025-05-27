@@ -2,48 +2,41 @@
 #include <fstream>
 #include <chrono>
 #include <thread>
-#include <vector>
+#include <cmath>
 using namespace std;
 
-ofstream out("output8.txt");
-
-void merge(int v[], int l, int m, int h) {
-    int i = l, j = m + 1;
-    vector<int> temp(h - l + 1);
-
-    int k = 0;
-    while (i <= m && j <= h) {
+void merge(int v[], int temp[], int l, int m, int h) {
+    int i = l, j = m + 1, k = l;
+    while (i <= m && j <= h)
         if (v[i] < v[j])
             temp[k++] = v[i++];
         else
             temp[k++] = v[j++];
-    }
     while (i <= m)
         temp[k++] = v[i++];
     while (j <= h)
         temp[k++] = v[j++];
-
-    for (i = l, k = 0; i <= h; ++i)
-        v[i] = temp[k++];
+    for (i = l; i <= h; ++i)
+        v[i] = temp[i];
 }
 
-void MergeSort(int v[], int l, int h, int depth) {
-    if (l < h) {
-        int m = (l + h) / 2;
+void MergeSort(int v[], int temp[], int l, int h, int depth) {
+    if (l >= h) return;
 
-        if (depth <= 0) {
-            MergeSort(v, l, m, depth - 1);
-            MergeSort(v, m + 1, h, depth - 1);
-        }
-        else {
-            thread t1(MergeSort, v, l, m, depth - 1);
-            thread t2(MergeSort, v, m + 1, h, depth - 1);
-            t1.join();
-            t2.join();
-        }
+    int m = (l + h) / 2;
 
-        merge(v, l, m, h);
+    if (depth > 0) {
+        thread t1(MergeSort, v, temp, l, m, depth - 1);
+        thread t2(MergeSort, v, temp, m + 1, h, depth - 1);
+        t1.join();
+        t2.join();
     }
+    else {
+        MergeSort(v, temp, l, m, 0);
+        MergeSort(v, temp, m + 1, h, 0);
+    }
+
+    merge(v, temp, l, m, h);
 }
 
 int main() {
@@ -52,23 +45,29 @@ int main() {
     cin >> numberOfElements;
 
     int* v = new int[numberOfElements];
+    int* temp = new int[numberOfElements];
+
     for (int i = 0; i < numberOfElements; i++)
         v[i] = numberOfElements - i - 1;
 
+    int depth = log2(thread::hardware_concurrency());
+
     auto start = chrono::high_resolution_clock::now();
-    MergeSort(v, 0, numberOfElements - 1, 3);
+    MergeSort(v, temp, 0, numberOfElements - 1, depth);
     auto end = chrono::high_resolution_clock::now();
 
     chrono::duration<double> duration = end - start;
 
+    ofstream out("output8.txt");
     for (int i = 0; i < numberOfElements; i++) {
         out << v[i] << " ";
         if (i % 10 == 0)
             out << endl;
     }
 
-    cout << "\nMergeSort (parallel): " << duration.count() << " seconds" << endl;
+    cout << "\n MergeSort: " << duration.count() << " seconds\n";
 
     delete[] v;
+    delete[] temp;
     return 0;
 }
